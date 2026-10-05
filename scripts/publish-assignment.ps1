@@ -32,17 +32,27 @@ param(
 # CONFIGURATION
 # ============================================================
 
-$BasePath = "G:\training\fullstack-training-template\"
+# ============================================================
+# CONFIGURATION
+# ============================================================
 
-$AssignmentsPath = Join-Path $BasePath "assignments"
+# Project root:
+# G:\training\fullstack-training-template
+$BasePath = Split-Path -Parent $PSScriptRoot
 
+# Assignments are directly under project root
+$AssignmentsPath = $BasePath
+
+# Trainee CSV
 $TraineesFile = Join-Path $BasePath "trainees.csv"
 
+# Temporary working directory
 $WorkPath = Join-Path $BasePath "trainee-work"
 
+# Reports
 $ReportsPath = Join-Path $BasePath "reports"
 
-# Your GitHub account
+# GitHub account
 $GitHubUser = "avinashkonduri"
 
 # GitHub repository suffix/pattern
@@ -59,7 +69,7 @@ New-Item -ItemType Directory -Force -Path $ReportsPath | Out-Null
 # VALIDATE INPUTS
 # ============================================================
 
-$AssignmentSource = Join-Path $AssignmentsPath "$Technology\$Day"
+$AssignmentSource = Join-Path $AssignmentsPath "$Technology\$Day\$Assignment"
 
 $READMEFile = Join-Path $AssignmentSource "README.md"
 
