@@ -32,7 +32,7 @@ param(
 # CONFIGURATION
 # ============================================================
 
-$BasePath = "C:\FullStackTraining"
+$BasePath = "G:\training\fullstack-training-template\"
 
 $AssignmentsPath = Join-Path $BasePath "assignments"
 
