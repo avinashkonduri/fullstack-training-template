@@ -41,7 +41,7 @@ param(
 $BasePath = Split-Path -Parent $PSScriptRoot
 
 # Assignments are directly under project root
-$AssignmentsPath = $BasePath
+$AssignmentSource = Join-Path $AssignmentsPath "$Technology\$Day\$Assignment"
 
 # Trainee CSV
 $TraineesFile = Join-Path $BasePath "trainees.csv"
