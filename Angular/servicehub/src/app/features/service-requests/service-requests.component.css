@@ -1,0 +1,170 @@
+.requests-page {
+    max-width: 1500px;
+    margin: 0 auto;
+}
+
+.page-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+h1 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 28px;
+}
+
+.page-heading p {
+    color: #64748b;
+    font-size: 13px;
+}
+
+.primary-button,
+.secondary-button {
+    padding: 11px 14px;
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.primary-button {
+    border: 0;
+    color: #fff;
+    background: #16794b;
+}
+
+.secondary-button {
+    border: 1px solid #cbd5e1;
+    color: #334155;
+    background: #fff;
+}
+
+.filter-panel,
+.table-card {
+    padding: 20px;
+    border: 1px solid #e2e8f0;
+    border-radius: 11px;
+    background: #fff;
+}
+
+.filter-panel {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.filter-panel label {
+    color: #475569;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.filter-panel input,
+.filter-panel select {
+    min-height: 38px;
+    padding: 8px 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    background: #fff;
+}
+
+.filter-panel input {
+    flex: 1 1 190px;
+}
+
+.filter-panel select {
+    flex: 1 1 130px;
+}
+
+.table-wrapper {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    white-space: nowrap;
+}
+
+th {
+    padding: 12px;
+    color: #64748b;
+    background: #f8fafc;
+    font-size: 11px;
+}
+
+td {
+    padding: 15px 12px;
+    border-bottom: 1px solid #edf1f5;
+    color: #475569;
+    font-size: 12px;
+}
+
+.request-id {
+    color: #16794b;
+    font-weight: 800;
+}
+
+.priority,
+.status {
+    display: inline-block;
+    padding: 5px 9px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.priority.high {
+    color: #b91c1c;
+    background: #fee2e2;
+}
+
+.priority.medium {
+    color: #92400e;
+    background: #fef3c7;
+}
+
+.priority.low {
+    color: #166534;
+    background: #dcfce7;
+}
+
+.status.in-progress {
+    color: #1d4ed8;
+    background: #dbeafe;
+}
+
+.status.open {
+    color: #9a3412;
+    background: #ffedd5;
+}
+
+.status.resolved {
+    color: #166534;
+    background: #dcfce7;
+}
+
+@media (max-width: 650px) {
+    .page-heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .filter-panel {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .filter-panel input,
+    .filter-panel select {
+        width: 100%;
+        box-sizing: border-box;
+    }
+}

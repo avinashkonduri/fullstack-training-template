@@ -1,0 +1,73 @@
+<section class="requests-page">
+  <div class="page-heading">
+    <div>
+      <h1>Service Requests</h1>
+      <p>View and manage employee support requests.</p>
+    </div>
+    <button type="button" class="primary-button">+ Create Request</button>
+  </div>
+
+  <section class="filter-panel" aria-label="Request filters">
+    <label for="request-search">Search requests</label>
+    <input id="request-search" type="search" placeholder="Search by ID or title">
+    <label for="status-filter">Status</label>
+    <select id="status-filter">
+      <option>All statuses</option>
+      <option>Open</option>
+      <option>In Progress</option>
+      <option>Waiting</option>
+      <option>Resolved</option>
+    </select>
+    <label for="priority-filter">Priority</label>
+    <select id="priority-filter">
+      <option>All priorities</option>
+      <option>High</option>
+      <option>Medium</option>
+      <option>Low</option>
+    </select>
+    <button class="secondary-button" type="button">Clear filters</button>
+  </section>
+
+  <section class="table-card">
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Request ID</th>
+            <th scope="col">Title</th>
+            <th scope="col">Category</th>
+            <th scope="col">Priority</th>
+            <th scope="col">Status</th>
+            <th scope="col">Created</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="request-id">SR-10245</td>
+            <td>VPN connection issue</td>
+            <td>Network</td>
+            <td><span class="priority high">High</span></td>
+            <td><span class="status in-progress">In Progress</span></td>
+            <td>13 Oct 2026</td>
+          </tr>
+          <tr>
+            <td class="request-id">SR-10244</td>
+            <td>Laptop performance issue</td>
+            <td>Hardware</td>
+            <td><span class="priority medium">Medium</span></td>
+            <td><span class="status open">Open</span></td>
+            <td>13 Oct 2026</td>
+          </tr>
+          <tr>
+            <td class="request-id">SR-10243</td>
+            <td>Outlook access request</td>
+            <td>Software</td>
+            <td><span class="priority low">Low</span></td>
+            <td><span class="status resolved">Resolved</span></td>
+            <td>12 Oct 2026</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</section>

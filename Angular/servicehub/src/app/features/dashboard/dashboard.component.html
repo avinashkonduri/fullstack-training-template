@@ -1,0 +1,137 @@
+<section class="dashboard">
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">OVERVIEW</p>
+      <h1>Dashboard</h1>
+      <p class="page-description">Here is what's happening with your service requests today.</p>
+    </div>
+    <button class="primary-button" type="button">+ Create Request</button>
+  </div>
+
+  <section class="summary-grid" aria-label="Request summary">
+    <article class="summary-card">
+      <div class="card-topline"><span>Open Requests</span><span class="metric-icon green">↗</span></div>
+      <p class="metric-value">24</p>
+      <p class="metric-note">Requests waiting for action</p>
+    </article>
+    <article class="summary-card">
+      <div class="card-topline"><span>In Progress</span><span class="metric-icon blue">◷</span></div>
+      <p class="metric-value">12</p>
+      <p class="metric-note">Currently being handled</p>
+    </article>
+    <article class="summary-card">
+      <div class="card-topline"><span>Resolved</span><span class="metric-icon purple">✓</span></div>
+      <p class="metric-value">86</p>
+      <p class="metric-note">Successfully completed</p>
+    </article>
+    <article class="summary-card">
+      <div class="card-topline"><span>High Priority</span><span class="metric-icon orange">!</span></div>
+      <p class="metric-value">5</p>
+      <p class="metric-note">Require immediate attention</p>
+    </article>
+  </section>
+
+  <section class="content-card">
+    <div class="section-heading">
+      <div>
+        <h2>Recent Service Requests</h2>
+        <p>Latest requests submitted by your team</p>
+      </div>
+      <a class="text-link" href="#">View all requests →</a>
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Request ID</th>
+            <th scope="col">Request Title</th>
+            <th scope="col">Category</th>
+            <th scope="col">Priority</th>
+            <th scope="col">Status</th>
+            <th scope="col">Assigned To</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="request-id">SR-10245</td>
+            <td>VPN connection issue</td>
+            <td>Network</td>
+            <td><span class="priority high">High</span></td>
+            <td><span class="status in-progress">In Progress</span></td>
+            <td>Ravi Kumar</td>
+          </tr>
+          <tr>
+            <td class="request-id">SR-10244</td>
+            <td>Laptop performance issue</td>
+            <td>Hardware</td>
+            <td><span class="priority medium">Medium</span></td>
+            <td><span class="status open">Open</span></td>
+            <td>Unassigned</td>
+          </tr>
+          <tr>
+            <td class="request-id">SR-10243</td>
+            <td>Outlook access request</td>
+            <td>Software</td>
+            <td><span class="priority low">Low</span></td>
+            <td><span class="status resolved">Resolved</span></td>
+            <td>Anil Sharma</td>
+          </tr>
+          <tr>
+            <td class="request-id">SR-10242</td>
+            <td>New software installation</td>
+            <td>Access</td>
+            <td><span class="priority high">High</span></td>
+            <td><span class="status waiting">Waiting</span></td>
+            <td>Priya Reddy</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="bottom-grid">
+    <article class="content-card">
+      <div class="section-heading">
+        <div>
+          <h2>Requests by Category</h2>
+          <p>Illustrative distribution</p>
+        </div>
+      </div>
+      <div class="category-row"><span>Network</span><strong>32%</strong></div>
+      <div class="progress-track"><div class="progress-fill network-fill"></div></div>
+      <div class="category-row"><span>Hardware</span><strong>26%</strong></div>
+      <div class="progress-track"><div class="progress-fill hardware-fill"></div></div>
+      <div class="category-row"><span>Software</span><strong>24%</strong></div>
+      <div class="progress-track"><div class="progress-fill software-fill"></div></div>
+      <div class="category-row"><span>Access</span><strong>18%</strong></div>
+      <div class="progress-track"><div class="progress-fill access-fill"></div></div>
+    </article>
+
+    <article class="content-card">
+      <div class="section-heading">
+        <div>
+          <h2>Team Availability</h2>
+          <p>Sample support team status</p>
+        </div>
+      </div>
+      <div class="team-member">
+        <span class="member-avatar avatar-green">RK</span>
+        <div class="member-info"><strong>Ravi Kumar</strong><span>Network Support</span></div>
+        <span class="availability available">Available</span>
+      </div>
+      <div class="team-member">
+        <span class="member-avatar avatar-blue">AS</span>
+        <div class="member-info"><strong>Anil Sharma</strong><span>Application Support</span></div>
+        <span class="availability busy">Busy</span>
+      </div>
+      <div class="team-member">
+        <span class="member-avatar avatar-purple">PR</span>
+        <div class="member-info"><strong>Priya Reddy</strong><span>Hardware Support</span></div>
+        <span class="availability available">Available</span>
+      </div>
+    </article>
+  </section>
+
+  <footer class="dashboard-footer">ServiceHub Training Project · Sample data for Angular fundamentals</footer>
+</section>
