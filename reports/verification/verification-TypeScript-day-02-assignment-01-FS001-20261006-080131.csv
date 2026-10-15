@@ -1,0 +1,2 @@
+﻿"Timestamp","TraineeId","TraineeName","Repository","Technology","Day","Assignment","Submission","Compilation","Passed","Failed","Score","Status","Message"
+"2026-10-06 08.01.35","FS001","Ajay G","FS001-fullstack-training","TypeScript","day-02","assignment-01","FOUND","FAILED","0","0","0","COMPILE_ERROR","No TypeScript files found"

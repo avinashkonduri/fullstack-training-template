@@ -18,14 +18,66 @@ param(
     [string]$ReportsPath = ""
 )
 
-$ErrorActionPreference = "Stop"
+# ============================================================
+# TRAINEE ASSIGNMENT VERIFICATION
+# Robust PowerShell version
+# ============================================================
+
+# IMPORTANT:
+# Git, tsc and node can write informational/warning messages to
+# stderr. Do NOT use ErrorActionPreference = Stop for native
+# commands because PowerShell may turn harmless stderr into an
+# exception.
+$ErrorActionPreference = "Continue"
+
+# PowerShell 7 setting. Windows PowerShell 5.1 does not have this
+# variable, so check before assigning it.
+if ($null -ne (Get-Variable PSNativeCommandUseErrorActionPreference -ErrorAction SilentlyContinue)) {
+    $PSNativeCommandUseErrorActionPreference = $false
+}
+
+# ------------------------------------------------------------
+# Helper: run a native command safely
+# ------------------------------------------------------------
+function Invoke-NativeCommand {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Command,
+
+        [Parameter(Mandatory = $false)]
+        [string[]]$Arguments = @(),
+
+        [Parameter(Mandatory = $false)]
+        [string]$WorkingDirectory = ""
+    )
+
+    $oldLocation = Get-Location
+
+    try {
+        if (-not [string]::IsNullOrWhiteSpace($WorkingDirectory)) {
+            Set-Location $WorkingDirectory
+        }
+
+        # Capture stdout/stderr without allowing native stderr to
+        # terminate the script.
+        $output = @(& $Command @Arguments 2>&1)
+        $exitCode = $LASTEXITCODE
+
+        return [PSCustomObject]@{
+            Output   = $output
+            ExitCode = $exitCode
+        }
+    }
+    finally {
+        Set-Location $oldLocation
+    }
+}
 
 # ------------------------------------------------------------
 # Configuration
 # ------------------------------------------------------------
 
-$ScriptRoot = Split-Path -Parent $PSScriptRoot
-$BasePath = Split-Path -Parent $ScriptRoot
+$BasePath = Split-Path -Parent $PSScriptRoot
 
 if ([string]::IsNullOrWhiteSpace($WorkPath)) {
     $WorkPath = Join-Path $BasePath "trainee-work"
@@ -45,6 +97,50 @@ $Branch = "main"
 
 New-Item -ItemType Directory -Force -Path $WorkPath | Out-Null
 New-Item -ItemType Directory -Force -Path $ReportsPath | Out-Null
+
+# ------------------------------------------------------------
+# Helper: save a result and display it
+# ------------------------------------------------------------
+function Save-VerificationResult {
+    param(
+        [Parameter(Mandatory = $true)]
+        [PSCustomObject]$Result,
+
+        [Parameter(Mandatory = $true)]
+        [string]$ReportsPath,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Technology,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Day,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Assignment,
+
+        [Parameter(Mandatory = $true)]
+        [string]$TraineeId,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Timestamp
+    )
+
+    $ReportFile = Join-Path `
+        $ReportsPath `
+        "verification-$Technology-$Day-$Assignment-$TraineeId-$Timestamp.csv"
+
+    $Result | Export-Csv `
+        $ReportFile `
+        -NoTypeInformation `
+        -Encoding UTF8
+
+    Write-Host ""
+    $Result | Format-List
+    Write-Host ""
+    Write-Host "CSV Report: $ReportFile" -ForegroundColor Green
+
+    return $ReportFile
+}
 
 # ------------------------------------------------------------
 # Find trainee
@@ -86,9 +182,12 @@ $HiddenTestsPath = Join-Path `
     $TestsPath `
     "$Technology\$Day\$Assignment"
 
-$HiddenTestFile = Join-Path `
-    $HiddenTestsPath `
-    "assignment.test.ts"
+# Support either naming convention:
+# assignment.test.cjs OR assignment.test.js
+# The preferred trainer-only test file is assignment.test.cjs.
+$HiddenTestCjs = Join-Path $HiddenTestsPath "assignment.test.cjs"
+$HiddenTestJs  = Join-Path $HiddenTestsPath "assignment.test.js"
+$HiddenTestTs  = Join-Path $HiddenTestsPath "assignment.test.ts"
 
 $ResultTimestamp = Get-Date -Format "yyyyMMdd-HHmmss"
 
@@ -109,6 +208,35 @@ Write-Host "Assignment : $Assignment"
 Write-Host ""
 
 # ------------------------------------------------------------
+# Validate hidden test source before doing repository work
+# ------------------------------------------------------------
+
+$HiddenTestSource = $null
+
+if (Test-Path $HiddenTestCjs) {
+    $HiddenTestSource = $HiddenTestCjs
+}
+elseif (Test-Path $HiddenTestJs) {
+    $HiddenTestSource = $HiddenTestJs
+}
+elseif (Test-Path $HiddenTestTs) {
+    $HiddenTestSource = $HiddenTestTs
+}
+
+if ($null -eq $HiddenTestSource) {
+    throw @"
+Hidden test file not found.
+
+Expected one of:
+$HiddenTestCjs
+$HiddenTestJs
+$HiddenTestTs
+
+Create the trainer-only hidden test before running verification.
+"@
+}
+
+# ------------------------------------------------------------
 # Pull repository
 # ------------------------------------------------------------
 
@@ -116,50 +244,47 @@ if (-not (Test-Path $LocalRepo)) {
 
     Write-Host "Cloning repository..." -ForegroundColor Gray
 
-    git clone $RepoUrl $LocalRepo
+    $cloneResult = Invoke-NativeCommand `
+        -Command "git" `
+        -Arguments @("clone", $RepoUrl, $LocalRepo)
 
-    if ($LASTEXITCODE -ne 0) {
-        throw "Git clone failed."
+    $cloneResult.Output | ForEach-Object {
+        Write-Host $_
+    }
+
+    if ($cloneResult.ExitCode -ne 0) {
+        throw "Git clone failed for $Repository."
     }
 }
 else {
 
     Write-Host "Repository already exists locally."
 
-    Push-Location $LocalRepo
+    $checkoutResult = Invoke-NativeCommand `
+        -Command "git" `
+        -Arguments @("checkout", $Branch) `
+        -WorkingDirectory $LocalRepo
 
-    try {
-        git checkout $Branch 2>$null
-
-        if ($LASTEXITCODE -ne 0) {
-            throw "Unable to checkout $Branch."
-        }
-
-        git pull origin $Branch
-
-        if ($LASTEXITCODE -ne 0) {
-            throw "Git pull failed."
-        }
+    $checkoutResult.Output | ForEach-Object {
+        Write-Host $_
     }
-    finally {
-        Pop-Location
+
+    if ($checkoutResult.ExitCode -ne 0) {
+        throw "Unable to checkout $Branch in $Repository."
     }
-}
 
-# ------------------------------------------------------------
-# Validate hidden tests
-# ------------------------------------------------------------
+    $pullResult = Invoke-NativeCommand `
+        -Command "git" `
+        -Arguments @("pull", "origin", $Branch) `
+        -WorkingDirectory $LocalRepo
 
-if (-not (Test-Path $HiddenTestFile)) {
+    $pullResult.Output | ForEach-Object {
+        Write-Host $_
+    }
 
-    throw @"
-Hidden test file not found.
-
-Expected:
-$HiddenTestFile
-
-Create the hidden test before running verification.
-"@
+    if ($pullResult.ExitCode -ne 0) {
+        throw "Git pull failed for $Repository."
+    }
 }
 
 # ------------------------------------------------------------
@@ -168,32 +293,36 @@ Create the hidden test before running verification.
 
 if (-not (Test-Path $SubmissionPath)) {
 
+    Write-Host ""
     Write-Host "SUBMISSION MISSING" -ForegroundColor Red
+    Write-Host "Expected:"
+    Write-Host $SubmissionPath
 
     $Result = [PSCustomObject]@{
-        Timestamp    = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-        TraineeId    = $TraineeId
-        TraineeName  = $TraineeName
-        Repository   = $Repository
-        Technology   = $Technology
-        Day          = $Day
-        Assignment   = $Assignment
-        Submission   = "MISSING"
-        Compilation  = "NOT_RUN"
-        Passed       = 0
-        Failed       = 0
-        Score        = 0
-        Status       = "NOT_SUBMITTED"
-        Message      = "Submission folder not found"
+        Timestamp   = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+        TraineeId   = $TraineeId
+        TraineeName = $TraineeName
+        Repository  = $Repository
+        Technology  = $Technology
+        Day         = $Day
+        Assignment  = $Assignment
+        Submission  = "MISSING"
+        Compilation = "NOT_RUN"
+        Passed      = 0
+        Failed      = 0
+        Score       = 0
+        Status      = "NOT_SUBMITTED"
+        Message     = "Submission folder not found"
     }
 
-    $ReportFile = Join-Path `
-        $ReportsPath `
-        "verification-$Technology-$Day-$Assignment-$TraineeId-$ResultTimestamp.csv"
-
-    $Result | Export-Csv $ReportFile -NoTypeInformation -Encoding UTF8
-
-    $Result | Format-List
+    Save-VerificationResult `
+        -Result $Result `
+        -ReportsPath $ReportsPath `
+        -Technology $Technology `
+        -Day $Day `
+        -Assignment $Assignment `
+        -TraineeId $TraineeId `
+        -Timestamp $ResultTimestamp | Out-Null
 
     exit 0
 }
@@ -255,38 +384,43 @@ else {
 Write-Host ""
 Write-Host "Compiling submission..." -ForegroundColor Cyan
 
-$SubmissionFiles = @(Get-ChildItem `
-    -Path $SubmissionCopy `
-    -Filter "*.ts" `
-    -Recurse `
-    -File)
+$SubmissionFiles = @(
+    Get-ChildItem `
+        -Path $SubmissionCopy `
+        -Filter "*.ts" `
+        -Recurse `
+        -File
+)
 
 if ($SubmissionFiles.Count -eq 0) {
 
     Write-Host "No TypeScript files found in submission." -ForegroundColor Red
 
     $Result = [PSCustomObject]@{
-        Timestamp    = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-        TraineeId    = $TraineeId
-        TraineeName  = $TraineeName
-        Repository   = $Repository
-        Technology   = $Technology
-        Day          = $Day
-        Assignment   = $Assignment
-        Submission   = "FOUND"
-        Compilation  = "FAILED"
-        Passed       = 0
-        Failed       = 0
-        Score        = 0
-        Status       = "COMPILE_ERROR"
-        Message      = "No TypeScript files found"
+        Timestamp   = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+        TraineeId   = $TraineeId
+        TraineeName = $TraineeName
+        Repository  = $Repository
+        Technology  = $Technology
+        Day         = $Day
+        Assignment  = $Assignment
+        Submission  = "FOUND"
+        Compilation = "FAILED"
+        Passed      = 0
+        Failed      = 0
+        Score       = 0
+        Status      = "COMPILE_ERROR"
+        Message     = "No TypeScript files found"
     }
 
-    $ReportFile = Join-Path `
-        $ReportsPath `
-        "verification-$Technology-$Day-$Assignment-$TraineeId-$ResultTimestamp.csv"
-
-    $Result | Export-Csv $ReportFile -NoTypeInformation -Encoding UTF8
+    Save-VerificationResult `
+        -Result $Result `
+        -ReportsPath $ReportsPath `
+        -Technology $Technology `
+        -Day $Day `
+        -Assignment $Assignment `
+        -TraineeId $TraineeId `
+        -Timestamp $ResultTimestamp | Out-Null
 
     exit 0
 }
@@ -295,43 +429,68 @@ $SubmissionCompileOut = Join-Path $VerificationRoot "submission-compile"
 
 New-Item -ItemType Directory -Force -Path $SubmissionCompileOut | Out-Null
 
-& $TscCommandName @TscArguments `
-    --target ES2022 `
-    --module commonjs `
-    --strict `
-    --esModuleInterop `
-    --skipLibCheck `
-    --outDir $SubmissionCompileOut `
-    --rootDir $SubmissionCopy `
-    $SubmissionFiles.FullName
+$compileArguments = @(
+    "tsc"
+)
 
-if ($LASTEXITCODE -ne 0) {
+if ($TscCommandName -ne "npx") {
+    $compileArguments = @()
+}
+
+$compileArguments += @(
+    "--target", "ES2022",
+    "--module", "commonjs",
+    "--strict",
+    "--esModuleInterop",
+    "--skipLibCheck",
+    "--outDir", $SubmissionCompileOut,
+    "--rootDir", $SubmissionCopy
+)
+
+foreach ($file in $SubmissionFiles) {
+    $compileArguments += $file.FullName
+}
+
+$compileResult = Invoke-NativeCommand `
+    -Command $TscCommandName `
+    -Arguments $compileArguments
+
+$compileResult.Output | ForEach-Object {
+    Write-Host $_
+}
+
+if ($compileResult.ExitCode -ne 0) {
 
     Write-Host ""
     Write-Host "COMPILATION FAILED" -ForegroundColor Red
 
+    $compileMessage = ($compileResult.Output -join "`n")
+
     $Result = [PSCustomObject]@{
-        Timestamp    = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-        TraineeId    = $TraineeId
-        TraineeName  = $TraineeName
-        Repository   = $Repository
-        Technology   = $Technology
-        Day          = $Day
-        Assignment   = $Assignment
-        Submission   = "FOUND"
-        Compilation  = "FAILED"
-        Passed       = 0
-        Failed       = 0
-        Score        = 0
-        Status       = "COMPILE_ERROR"
-        Message      = "TypeScript compilation failed"
+        Timestamp   = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+        TraineeId   = $TraineeId
+        TraineeName = $TraineeName
+        Repository  = $Repository
+        Technology  = $Technology
+        Day         = $Day
+        Assignment  = $Assignment
+        Submission  = "FOUND"
+        Compilation = "FAILED"
+        Passed      = 0
+        Failed      = 0
+        Score       = 0
+        Status      = "COMPILE_ERROR"
+        Message     = $compileMessage
     }
 
-    $ReportFile = Join-Path `
-        $ReportsPath `
-        "verification-$Technology-$Day-$Assignment-$TraineeId-$ResultTimestamp.csv"
-
-    $Result | Export-Csv $ReportFile -NoTypeInformation -Encoding UTF8
+    Save-VerificationResult `
+        -Result $Result `
+        -ReportsPath $ReportsPath `
+        -Technology $Technology `
+        -Day $Day `
+        -Assignment $Assignment `
+        -TraineeId $TraineeId `
+        -Timestamp $ResultTimestamp | Out-Null
 
     exit 0
 }
@@ -342,18 +501,90 @@ Write-Host "Compilation PASSED." -ForegroundColor Green
 # Prepare hidden test
 # ------------------------------------------------------------
 
-$HiddenTest = Join-Path $TestsCopy "assignment.test.cjs"
+$HiddenTest = $null
 
-if (-not (Test-Path $HiddenTest)) {
+$CopiedCjs = Join-Path $TestsCopy "assignment.test.cjs"
+$CopiedJs  = Join-Path $TestsCopy "assignment.test.js"
+$CopiedTs  = Join-Path $TestsCopy "assignment.test.ts"
 
+if (Test-Path $CopiedCjs) {
+    $HiddenTest = $CopiedCjs
+}
+elseif (Test-Path $CopiedJs) {
+    $HiddenTest = $CopiedJs
+}
+elseif (Test-Path $CopiedTs) {
+    $HiddenTest = $CopiedTs
+}
+
+if ($null -eq $HiddenTest) {
     throw @"
-Hidden test file not found.
+Hidden test file could not be found after copying.
 
-Expected:
-$HiddenTest
-
-Use assignment.test.cjs for trainer-side hidden tests.
+Expected assignment.test.cjs, assignment.test.js or assignment.test.ts
+inside:
+$TestsCopy
 "@
+}
+
+# ------------------------------------------------------------
+# TypeScript hidden test handling
+# ------------------------------------------------------------
+
+# The preferred hidden test is JavaScript/CommonJS.
+# If a TypeScript hidden test is supplied, compile it first.
+if ($HiddenTest.ToLower().EndsWith(".ts")) {
+
+    Write-Host ""
+    Write-Host "Compiling trainer hidden test..." -ForegroundColor Cyan
+
+    $HiddenTestCompileOut = Join-Path $VerificationRoot "hidden-test-compile"
+
+    New-Item `
+        -ItemType Directory `
+        -Force `
+        -Path $HiddenTestCompileOut | Out-Null
+
+    $hiddenCompileArguments = @()
+
+    if ($TscCommandName -eq "npx") {
+        $hiddenCompileArguments += "tsc"
+    }
+
+    $hiddenCompileArguments += @(
+        "--target", "ES2022",
+        "--module", "commonjs",
+        "--strict",
+        "--esModuleInterop",
+        "--skipLibCheck",
+        "--outDir", $HiddenTestCompileOut,
+        $HiddenTest
+    )
+
+    $hiddenCompileResult = Invoke-NativeCommand `
+        -Command $TscCommandName `
+        -Arguments $hiddenCompileArguments
+
+    $hiddenCompileResult.Output | ForEach-Object {
+        Write-Host $_
+    }
+
+    if ($hiddenCompileResult.ExitCode -ne 0) {
+        throw "Trainer hidden test compilation failed."
+    }
+
+    $compiledHiddenTest = Get-ChildItem `
+        -Path $HiddenTestCompileOut `
+        -Filter "assignment.test.js" `
+        -Recurse `
+        -File |
+        Select-Object -First 1
+
+    if ($null -eq $compiledHiddenTest) {
+        throw "Compiled hidden test assignment.test.js was not found."
+    }
+
+    $HiddenTest = $compiledHiddenTest.FullName
 }
 
 # ------------------------------------------------------------
@@ -367,7 +598,10 @@ Write-Host ""
 $env:SUBMISSION_COMPILED_PATH = $SubmissionCompileOut
 $env:HIDDEN_TEST_PATH = $HiddenTest
 
-$TestOutput = & node $TestRunner 2>&1
+$TestOutput = @(
+    & node --test $HiddenTest 2>&1
+)
+
 $TestExitCode = $LASTEXITCODE
 
 $TestOutput | ForEach-Object {
@@ -381,14 +615,23 @@ $TestOutput | ForEach-Object {
 $Passed = 0
 $Failed = 0
 
+$AllTestOutput = $TestOutput -join "`n"
+
+# Node's TAP output can contain:
+#   # tests 5
+#   # pass 4
+#   # fail 1
+#
+# Prefer the summary lines to avoid accidentally counting words
+# inside individual test names/messages.
 $PassedMatch = [regex]::Match(
-    ($TestOutput -join "`n"),
-    '(\d+)\s+pass'
+    $AllTestOutput,
+    '(?m)^\s*#\s+pass\s+(\d+)\s*$'
 )
 
 $FailedMatch = [regex]::Match(
-    ($TestOutput -join "`n"),
-    '(\d+)\s+fail'
+    $AllTestOutput,
+    '(?m)^\s*#\s+fail\s+(\d+)\s*$'
 )
 
 if ($PassedMatch.Success) {
@@ -397,6 +640,29 @@ if ($PassedMatch.Success) {
 
 if ($FailedMatch.Success) {
     $Failed = [int]$FailedMatch.Groups[1].Value
+}
+
+# Fallback for alternate output such as "5 pass / 1 fail".
+if (-not $PassedMatch.Success) {
+    $PassedMatch = [regex]::Match(
+        $AllTestOutput,
+        '(\d+)\s+pass'
+    )
+
+    if ($PassedMatch.Success) {
+        $Passed = [int]$PassedMatch.Groups[1].Value
+    }
+}
+
+if (-not $FailedMatch.Success) {
+    $FailedMatch = [regex]::Match(
+        $AllTestOutput,
+        '(\d+)\s+fail'
+    )
+
+    if ($FailedMatch.Success) {
+        $Failed = [int]$FailedMatch.Groups[1].Value
+    }
 }
 
 $Total = $Passed + $Failed
@@ -408,7 +674,7 @@ else {
     $Score = 0
 }
 
-if ($TestExitCode -eq 0 -and $Failed -eq 0) {
+if ($TestExitCode -eq 0 -and $Failed -eq 0 -and $Passed -gt 0) {
     $Status = "PASS"
     $Message = "All tests passed"
 }
@@ -438,20 +704,20 @@ $TestOutput | Out-File `
 # ------------------------------------------------------------
 
 $Result = [PSCustomObject]@{
-    Timestamp    = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    TraineeId    = $TraineeId
-    TraineeName  = $TraineeName
-    Repository   = $Repository
-    Technology   = $Technology
-    Day          = $Day
-    Assignment   = $Assignment
-    Submission   = "FOUND"
-    Compilation  = "PASS"
-    Passed       = $Passed
-    Failed       = $Failed
-    Score        = $Score
-    Status       = $Status
-    Message      = $Message
+    Timestamp   = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    TraineeId   = $TraineeId
+    TraineeName = $TraineeName
+    Repository  = $Repository
+    Technology  = $Technology
+    Day         = $Day
+    Assignment  = $Assignment
+    Submission  = "FOUND"
+    Compilation = "PASS"
+    Passed      = $Passed
+    Failed      = $Failed
+    Score       = $Score
+    Status      = $Status
+    Message     = $Message
 }
 
 $ReportFile = Join-Path `
@@ -473,6 +739,7 @@ Write-Host "                 VERIFICATION RESULT" -ForegroundColor Cyan
 Write-Host "============================================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Trainee       : $TraineeId - $TraineeName"
+Write-Host "Repository    : $Repository"
 Write-Host "Assignment    : $Technology / $Day / $Assignment"
 Write-Host "Submission    : FOUND"
 Write-Host "Compilation   : PASS"
@@ -486,11 +753,22 @@ Write-Host "Detail Report : $OutputFile"
 Write-Host ""
 
 # ------------------------------------------------------------
-# Cleanup
+# Cleanup environment variables
 # ------------------------------------------------------------
 
-Remove-Item `
-    $VerificationRoot `
-    -Recurse `
-    -Force `
-    -ErrorAction SilentlyContinue
+Remove-Item Env:SUBMISSION_COMPILED_PATH -ErrorAction SilentlyContinue
+Remove-Item Env:HIDDEN_TEST_PATH -ErrorAction SilentlyContinue
+
+# ------------------------------------------------------------
+# Cleanup temporary verification workspace
+# ------------------------------------------------------------
+
+if (Test-Path $VerificationRoot) {
+    Remove-Item `
+        $VerificationRoot `
+        -Recurse `
+        -Force `
+        -ErrorAction SilentlyContinue
+}
+
+Write-Host "Verification completed." -ForegroundColor Green
