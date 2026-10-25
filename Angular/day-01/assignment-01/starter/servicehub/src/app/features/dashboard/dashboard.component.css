@@ -276,6 +276,47 @@ tbody tr:last-child td {
   text-align: center;
 }
 
+.request-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.search-input,
+.status-select {
+  min-height: 40px;
+  padding: 9px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  background: #fff;
+  color: #334155;
+}
+
+.search-input {
+  flex: 1;
+  min-width: 220px;
+}
+
+.status-select {
+  min-width: 160px;
+}
+
+.secondary-button {
+  padding: 9px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  background: #fff;
+  color: #334155;
+  cursor: pointer;
+}
+
+.empty-message {
+  padding: 24px;
+  color: #64748b;
+  text-align: center;
+}
+
 @media (max-width: 1100px) {
   .summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
