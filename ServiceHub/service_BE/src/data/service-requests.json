@@ -1,0 +1,62 @@
+[
+  {
+    "id": 1001,
+    "requestId": "SR-2026-001",
+    "title": "Laptop not booting",
+    "description": "Laptop displays a PXE boot error.",
+    "category": "Hardware",
+    "priority": "High",
+    "status": "Open",
+    "requestedBy": "Ravi Kumar",
+    "assignedTo": "Support Team A",
+    "createdAt": "2026-10-26"
+  },
+  {
+    "id": 1002,
+    "requestId": "SR-2026-002",
+    "title": "Unable to access email",
+    "description": "Email application fails to authenticate.",
+    "category": "Software",
+    "priority": "Medium",
+    "status": "In Progress",
+    "requestedBy": "Priya Sharma",
+    "assignedTo": "Support Team B",
+    "createdAt": "2026-10-25"
+  },
+  {
+    "id": 1003,
+    "requestId": "SR-2026-003",
+    "title": "VPN connection issue",
+    "description": "Unable to connect to the corporate VPN.",
+    "category": "Network",
+    "priority": "High",
+    "status": "Pending",
+    "requestedBy": "Arun Kumar",
+    "assignedTo": "Network Support",
+    "createdAt": "2026-10-24"
+  },
+  {
+    "id": 1004,
+    "requestId": "SR-2026-004",
+    "title": "Software installation request",
+    "description": "Request to install Visual Studio Code.",
+    "category": "Software",
+    "priority": "Low",
+    "status": "Resolved",
+    "requestedBy": "Sneha Reddy",
+    "assignedTo": "Support Team A",
+    "createdAt": "2026-10-23"
+  },
+  {
+    "id": 1005,
+    "requestId": "SR-2026-005",
+    "title": "Printer not responding",
+    "description": "Office printer is not responding to print jobs.",
+    "category": "Hardware",
+    "priority": "Medium",
+    "status": "Open",
+    "requestedBy": "Kiran Reddy",
+    "assignedTo": "Hardware Support",
+    "createdAt": "2026-10-22"
+  }
+]

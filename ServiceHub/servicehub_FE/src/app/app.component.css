@@ -1,0 +1,40 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  color: #1f2937;
+  background: #f4f7fb;
+}
+
+.app-layout {
+  display: flex;
+  min-height: calc(100vh - 64px);
+}
+
+.main-content {
+  flex: 1;
+  min-width: 0;
+  padding: 24px;
+}
+
+.breadcrumb {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 24px;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.breadcrumb-separator {
+  color: #94a3b8;
+}
+
+@media (max-width: 760px) {
+  .app-layout {
+    display: block;
+  }
+
+  .main-content {
+    padding: 16px;
+  }
+}
