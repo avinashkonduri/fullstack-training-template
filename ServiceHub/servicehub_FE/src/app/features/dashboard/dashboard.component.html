@@ -16,7 +16,7 @@
     <button
       class="primary-button"
       type="button"
-      (click)="createRequest()">
+      (click)="createRequest()" data-bs-toggle="modal" data-bs-target="#exampleModal">
       + Create Request
     </button>
   </div>
@@ -240,3 +240,166 @@
   </footer>
 
 </section>
+<!-- Modal -->
+```html
+<div class="modal fade" id="exampleModal" tabindex="-1"
+     aria-labelledby="exampleModalLabel" aria-hidden="true">
+
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">
+          Create Service Request
+        </h5>
+
+        <button type="button" class="btn-close"
+                data-bs-dismiss="modal"
+                aria-label="Close">
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="modal-body">
+
+        <form [formGroup]="serviceRequestForm"
+              (ngSubmit)="onSubmit()">
+
+          <div class="row">
+
+            <!-- Request ID -->
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Request ID</label>
+              <input type="text" class="form-control"
+                     formControlName="requestId"
+                     placeholder="SR-2026-001">
+
+              @if (f['requestId'].touched && f['requestId'].invalid) {
+                <small class="text-danger">Request ID is required</small>
+              }
+            </div>
+
+            <!-- Title -->
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Title</label>
+              <input type="text" class="form-control"
+                     formControlName="title"
+                     placeholder="Enter request title">
+
+              @if (f['title'].touched && f['title'].invalid) {
+                <small class="text-danger">
+                  Title is required (minimum 5 characters)
+                </small>
+              }
+            </div>
+
+            <!-- Category -->
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Category</label>
+              <select class="form-select" formControlName="category">
+                <option value="">Select Category</option>
+                @for (category of categories; track category) {
+                  <option [value]="category">{{ category }}</option>
+                }
+              </select>
+
+              @if (f['category'].touched && f['category'].invalid) {
+                <small class="text-danger">Select a category</small>
+              }
+            </div>
+
+            <!-- Priority -->
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Priority</label>
+              <select class="form-select" formControlName="priority">
+                @for (priority of priorities; track priority) {
+                  <option [value]="priority">{{ priority }}</option>
+                }
+              </select>
+            </div>
+
+            <!-- Status -->
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Status</label>
+              <select class="form-select" formControlName="status">
+                @for (status of statuses; track status) {
+                  <option [value]="status">{{ status }}</option>
+                }
+              </select>
+            </div>
+
+            <!-- Assigned To -->
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Assigned To</label>
+              <input type="text" class="form-control"
+                     formControlName="assignedTo"
+                     placeholder="Enter support agent">
+            </div>
+
+            <!-- Requested By -->
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Requested By</label>
+              <input type="text" class="form-control"
+                     formControlName="requestedBy"
+                     placeholder="Enter employee name">
+
+              @if (f['requestedBy'].touched && f['requestedBy'].invalid) {
+                <small class="text-danger">
+                  Requested By is required
+                </small>
+              }
+            </div>
+
+            <!-- Created At -->
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Created Date</label>
+              <input type="date" class="form-control"
+                     formControlName="createdAt">
+            </div>
+
+            <!-- Description -->
+            <div class="col-12 mb-3">
+              <label class="form-label">Description</label>
+              <textarea class="form-control" rows="4"
+                        formControlName="description"
+                        placeholder="Describe your service request">
+              </textarea>
+
+              @if (f['description'].touched && f['description'].invalid) {
+                <small class="text-danger">
+                  Description is required (minimum 10 characters)
+                </small>
+              }
+            </div>
+
+          </div>
+
+          <!-- Modal Footer / Form Actions -->
+          <div class="modal-footer px-0 pb-0">
+
+            <button type="button"
+                    class="btn btn-secondary"
+                    click="onReset()">
+              Reset
+            </button>
+
+            <button type="button"
+                    class="btn btn-light"
+                    data-bs-dismiss="modal">
+              Cancel
+            </button>
+
+            <button type="submit"
+                    class="btn btn-primary">
+              Submit Request
+            </button>
+
+          </div>
+
+        </form>
+
+      </div>
+    </div>
+  </div>
+</div>

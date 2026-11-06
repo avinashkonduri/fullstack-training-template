@@ -1,9 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ServiceRequest } from '../../models/service-request.model';
-
-
 
 // Team Member Model
 interface TeamMember {
@@ -23,24 +21,39 @@ interface RequestCategory {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, ReactiveFormsModule],
   templateUrl: './dashboard.component.html',
-  styleUrl: './dashboard.component.css'
+  styleUrl: './dashboard.component.css',
 })
-export class DashboardComponent implements OnInit{
+export class DashboardComponent implements OnInit {
   private http = inject(HttpClient);
+  private fb = inject(FormBuilder);
 
+  serviceRequestForm: FormGroup = this.fb.group({
+    id: [0],
+    requestId: ['', Validators.required],
+    title: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(100)]],
+    category: ['', Validators.required],
+    priority: ['Medium', Validators.required],
+    status: ['Open', Validators.required],
+    assignedTo: [''],
+    requestedBy: ['', Validators.required],
+    createdAt: [new Date().toISOString().split('T')[0]],
+    description: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(500)]],
+  });
+
+  categories = ['Hardware', 'Software', 'Network', 'Email', 'Access Management', 'Other'];
+
+  priorities = ['Low', 'Medium', 'High', 'Critical'];
+
+  statuses = ['Open', 'In Progress', 'Waiting', 'Resolved'];
   serviceRequests = signal<ServiceRequest[]>([]);
-// 1. Dashboard information
+  // 1. Dashboard information
   pageTitle = signal('Dashboard');
 
-  pageDescription = signal(
-    "Here is what's happening with your service requests today."
-  );
+  pageDescription = signal("Here is what's happening with your service requests today.");
 
-  footerText = signal(
-    'ServiceHub Training Project · Angular 21 Signals'
-  );
+  footerText = signal('ServiceHub Training Project · Angular 21 Signals');
 
   // 2. Dashboard summary
   openRequests = signal(24);
@@ -56,29 +69,28 @@ export class DashboardComponent implements OnInit{
   errorMessage = signal('');
   // 4. Service requests
 
-
   // 5. Category statistics
   requestCategories = signal<RequestCategory[]>([
     {
       name: 'Network',
       percentage: 32,
-      cssClass: 'network-fill'
+      cssClass: 'network-fill',
     },
     {
       name: 'Hardware',
       percentage: 26,
-      cssClass: 'hardware-fill'
+      cssClass: 'hardware-fill',
     },
     {
       name: 'Software',
       percentage: 24,
-      cssClass: 'software-fill'
+      cssClass: 'software-fill',
     },
     {
       name: 'Access',
       percentage: 18,
-      cssClass: 'access-fill'
-    }
+      cssClass: 'access-fill',
+    },
   ]);
 
   // 6. Team availability
@@ -88,22 +100,22 @@ export class DashboardComponent implements OnInit{
       name: 'Ravi Kumar',
       role: 'Network Support',
       availability: 'Available',
-      avatarClass: 'avatar-green'
+      avatarClass: 'avatar-green',
     },
     {
       initials: 'AS',
       name: 'Anil Sharma',
       role: 'Application Support',
       availability: 'Busy',
-      avatarClass: 'avatar-blue'
+      avatarClass: 'avatar-blue',
     },
     {
       initials: 'PR',
       name: 'Priya Reddy',
       role: 'Hardware Support',
       availability: 'Available',
-      avatarClass: 'avatar-purple'
-    }
+      avatarClass: 'avatar-purple',
+    },
   ]);
 
   // 7. Computed signal: filtered requests
@@ -111,15 +123,14 @@ export class DashboardComponent implements OnInit{
     const search = this.searchText().trim().toLowerCase();
     const status = this.selectedStatus();
 
-    return this.serviceRequests().filter(request => {
+    return this.serviceRequests().filter((request) => {
       const matchesSearch =
         request.requestId.toLowerCase().includes(search) ||
         request.title.toLowerCase().includes(search) ||
         request.category.toLowerCase().includes(search) ||
         request.assignedTo.toLowerCase().includes(search);
 
-      const matchesStatus =
-        status === 'All' || request.status === status;
+      const matchesStatus = status === 'All' || request.status === status;
 
       return matchesSearch && matchesStatus;
     });
@@ -128,10 +139,7 @@ export class DashboardComponent implements OnInit{
   ngOnInit(): void {
     this.loadRequests();
   }
-  // 8. Event handler: Create Request
-  createRequest(): void {
-    alert('Create Request button clicked!');
-  }
+
 
   // 9. Event handler: View all requests
   viewAllRequests(): void {
@@ -188,20 +196,58 @@ export class DashboardComponent implements OnInit{
     this.isLoading.set(true);
     this.errorMessage.set('');
 
-    this.http
-      .get<ServiceRequest[]>('/data/service-requests.json')
-      .subscribe({
-        next: (data) => {
-          this.serviceRequests.set(data);
-          this.isLoading.set(false);
-        },
-        error: (error) => {
-          console.error('Failed to load service requests', error);
-          this.errorMessage.set(
-            'Unable to load service requests. Please try again.'
-          );
-          this.isLoading.set(false);
-        }
-      });
+    this.http.get<ServiceRequest[]>('/data/service-requests.json').subscribe({
+      next: (data) => {
+        this.serviceRequests.set(data);
+        this.isLoading.set(false);
+      },
+      error: (error) => {
+        console.error('Failed to load service requests', error);
+        this.errorMessage.set('Unable to load service requests. Please try again.');
+        this.isLoading.set(false);
+      },
+    });
+  }
+
+    get f() {
+    return this.serviceRequestForm.controls;
+  }
+  // 8. Event handler: Create Request
+createRequest(): void {
+
+  const requests = this.serviceRequests();
+
+  // Generate next ID
+  const nextId = requests.length
+    ? Math.max(...requests.map(r => r.id)) + 1
+    : 1001;
+
+  // Generate next Request ID
+  const maxRequestNumber = requests.reduce((max, request) => {
+    const number = Number(request.requestId.split('-').at(-1));
+    return Number.isNaN(number) ? max : Math.max(max, number);
+  }, 0);
+
+  const requestId = `SR-${new Date().getFullYear()}-${String(
+    maxRequestNumber + 1
+  ).padStart(3, '0')}`;
+
+  // Reset form with default values
+  this.serviceRequestForm.reset({
+    id: nextId,
+    requestId: requestId,
+    title: '',
+    category: '',
+    priority: 'Medium',
+    status: 'Open',
+    assignedTo: '',
+    requestedBy: '',
+    createdAt: new Date().toISOString().split('T')[0],
+    description: ''
+  });
+
+}
+  onSubmit(){
+
   }
 }

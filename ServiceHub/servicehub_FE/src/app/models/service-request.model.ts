@@ -1,5 +1,6 @@
 
 export interface ServiceRequest {
+  id: number;
   requestId: string;
   title: string;
   category: string;
