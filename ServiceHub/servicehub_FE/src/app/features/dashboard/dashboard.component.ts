@@ -2,7 +2,6 @@ import { HttpClient } from '@angular/common/http';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ServiceRequest } from '../../models/service-request.model';
-
 // Team Member Model
 interface TeamMember {
   initials: string;
@@ -247,7 +246,56 @@ createRequest(): void {
   });
 
 }
-  onSubmit(){
+  onSubmit(): void {
 
+  if (this.serviceRequestForm.invalid) {
+    this.serviceRequestForm.markAllAsTouched();
+    return;
   }
+
+  // Get form data
+  const newRequest: ServiceRequest =
+    this.serviceRequestForm.getRawValue();
+
+  // Update Signals
+  this.serviceRequests.update(requests => [
+    newRequest,
+    ...requests
+  ]);
+
+  // Update dashboard summary
+  this.openRequests.update(count => count + 1);
+
+  // Close modal
+  const modalElement = document.getElementById('exampleModal');
+
+  // if (modalElement) {
+  //   import('bootstrap').then(({ Modal }) => {
+  //     Modal.getOrCreateInstance(modalElement).hide();
+  //   });
+  // }
+
+  // Reset form
+  this.serviceRequestForm.reset();
+
+  console.log('Service Request Created:', newRequest);
+
+}
+
+  onReset(): void {
+
+  this.serviceRequestForm.reset({
+    id: 0,
+    requestId: '',
+    title: '',
+    category: '',
+    priority: 'Medium',
+    status: 'Open',
+    assignedTo: '',
+    requestedBy: '',
+    createdAt: new Date().toISOString().split('T')[0],
+    description: ''
+  });
+
+}
 }
