@@ -144,9 +144,11 @@
     </thead>
 
     <tbody>
-      @for (request of serviceRequests(); track request.requestId) {
+      @for (request of serviceRequests(); track request.id) {
         <tr>
-          <td>{{ request.requestId }}</td>
+          <td> <a [routerLink]="['/service-requests', request.id]">
+                  {{ request.requestId }}
+                </a></td>
           <td>{{ request.title }}</td>
           <td>{{ request.priority }}</td>
           <td>{{ request.status }}</td>

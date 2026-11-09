@@ -2,6 +2,8 @@ import { HttpClient } from '@angular/common/http';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ServiceRequest } from '../../models/service-request.model';
+import { RouterModule } from '@angular/router';
+import { ServiceRequestService } from '../../service/service-request';
 // Team Member Model
 interface TeamMember {
   initials: string;
@@ -20,13 +22,14 @@ interface RequestCategory {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [FormsModule, ReactiveFormsModule],
+  imports: [FormsModule, ReactiveFormsModule, RouterModule],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css',
 })
 export class DashboardComponent implements OnInit {
   private http = inject(HttpClient);
   private fb = inject(FormBuilder);
+  private serviceRequestService = inject(ServiceRequestService)
 
   serviceRequestForm: FormGroup = this.fb.group({
     id: [0],
@@ -192,20 +195,12 @@ export class DashboardComponent implements OnInit {
   }
 
   loadRequests(): void {
-    this.isLoading.set(true);
+    // this.isLoading.set(true);
     this.errorMessage.set('');
 
-    this.http.get<ServiceRequest[]>('/data/service-requests.json').subscribe({
-      next: (data) => {
-        this.serviceRequests.set(data);
-        this.isLoading.set(false);
-      },
-      error: (error) => {
-        console.error('Failed to load service requests', error);
-        this.errorMessage.set('Unable to load service requests. Please try again.');
-        this.isLoading.set(false);
-      },
-    });
+   this.serviceRequestService.getRequests().subscribe(resp =>{
+    this.serviceRequests.set(resp.data);
+  });
   }
 
     get f() {

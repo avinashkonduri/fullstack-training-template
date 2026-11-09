@@ -8,26 +8,16 @@ import { ServiceRequest } from '../models/service-request.model';
 })
 export class ServiceRequestService {
   private http = inject(HttpClient);
+  private readonly apiUrl = 'http://localhost:3000/api/service-requests';
 
   private readonly dataUrl = '/data/service-requests.json';
 
-  getRequests(): Observable<ServiceRequest[]> {
-    return this.http.get<ServiceRequest[]>(this.dataUrl);
+  getRequests(): Observable<any> {
+    return this.http.get<ServiceRequest[]>(this.apiUrl);
   }
 
-  getRequestById(
-    requestId: string
-  ): Observable<ServiceRequest | undefined> {
-    return new Observable<ServiceRequest | undefined>(subscriber => {
-      this.getRequests().subscribe({
-        next: requests => {
-          subscriber.next(
-            requests.find(request => request.requestId === requestId)
-          );
-          subscriber.complete();
-        },
-        error: error => subscriber.error(error)
-      });
-    });
-  }
+  getRequestById(id: number): Observable<any> {
+  const url = `${this.apiUrl}/${id}`;
+  return this.http.get<ServiceRequest>(url);  
+}
 }

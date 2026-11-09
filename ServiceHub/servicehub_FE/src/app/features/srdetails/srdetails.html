@@ -1,0 +1,197 @@
+<div class="container py-4">
+
+  <!-- Loading -->
+  @if (loading()) {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary"></div>
+      <p class="mt-2">Loading service request...</p>
+    </div>
+  }
+
+  <!-- Error -->
+  @else if (errorMessage()) {
+    <div class="alert alert-danger">
+      {{ errorMessage() }}
+    </div>
+
+    <button class="btn btn-secondary" (click)="goBack()">
+      Back to Requests
+    </button>
+  }
+
+  <!-- Request Details -->
+  @else if (request(); as req) {
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+      <div>
+        <button class="btn btn-link ps-0" (click)="goBack()">
+          <i class="bi bi-arrow-left"></i>
+          Back to Requests
+        </button>
+
+        <h3 class="fw-bold mb-1">Service Request Details</h3>
+
+        <span class="text-muted">
+          Request ID: {{ req.requestId }}
+        </span>
+      </div>
+
+      <div class="d-flex gap-2">
+        <button class="btn btn-outline-primary"
+                (click)="editRequest()">
+          <i class="bi bi-pencil"></i>
+          Edit
+        </button>
+
+        <button class="btn btn-secondary"
+                (click)="goBack()">
+          Close
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Main Card -->
+    <div class="card shadow-sm border-0">
+
+      <div class="card-body p-4">
+
+        <!-- Title and Status -->
+        <div class="d-flex justify-content-between flex-wrap gap-3 mb-4">
+
+          <div>
+            <span class="badge bg-primary-subtle text-primary mb-2">
+              {{ req.category }}
+            </span>
+
+            <h4 class="fw-bold">{{ req.title }}</h4>
+
+            <p class="text-muted mb-0">
+              {{ req.description }}
+            </p>
+          </div>
+
+          <div class="text-end">
+
+            <span class="badge rounded-pill"
+              [ngClass]="{
+                'bg-success': req.status === 'Resolved',
+                'bg-warning text-dark': req.status === 'Waiting',
+                'bg-primary': req.status === 'In Progress',
+                'bg-danger': req.status === 'Open'
+              }">
+
+              {{ req.status }}
+
+            </span>
+
+            <div class="mt-2">
+              <span class="badge rounded-pill"
+                [ngClass]="{
+                  'bg-danger': req.priority === 'Critical',
+                  'bg-warning text-dark': req.priority === 'High',
+                  'bg-info text-dark': req.priority === 'Medium',
+                  'bg-secondary': req.priority === 'Low'
+                }">
+
+                {{ req.priority }} Priority
+
+              </span>
+            </div>
+
+          </div>
+
+        </div>
+
+        <hr>
+
+        <!-- Request Information -->
+        <h5 class="fw-semibold mb-3">Request Information</h5>
+
+        <div class="row g-4">
+
+          <div class="col-md-6">
+            <label class="text-muted small">Request ID</label>
+            <p class="fw-semibold">{{ req.requestId }}</p>
+          </div>
+
+          <div class="col-md-6">
+            <label class="text-muted small">Category</label>
+            <p class="fw-semibold">{{ req.category }}</p>
+          </div>
+
+          <div class="col-md-6">
+            <label class="text-muted small">Priority</label>
+            <p class="fw-semibold">{{ req.priority }}</p>
+          </div>
+
+          <div class="col-md-6">
+            <label class="text-muted small">Status</label>
+            <p class="fw-semibold">{{ req.status }}</p>
+          </div>
+
+          <div class="col-md-6">
+            <label class="text-muted small">Created Date</label>
+            <p class="fw-semibold">
+              {{ req.createdAt | date:'dd MMM yyyy' }}
+            </p>
+          </div>
+
+          <div class="col-md-6">
+            <label class="text-muted small">Request Database ID</label>
+            <p class="fw-semibold">{{ req.id }}</p>
+          </div>
+
+        </div>
+
+        <hr>
+
+        <!-- People Information -->
+        <h5 class="fw-semibold mb-3">People & Assignment</h5>
+
+        <div class="row g-4">
+
+          <div class="col-md-6">
+            <div class="person-card">
+
+              <div class="avatar">
+                {{ req.requestedBy.charAt(0) }}
+              </div>
+
+              <div>
+                <label class="text-muted small">Requested By</label>
+                <div class="fw-semibold">
+                  {{ req.requestedBy }}
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="person-card">
+
+              <div class="avatar bg-success">
+                {{ req.assignedTo.charAt(0) }}
+              </div>
+
+              <div>
+                <label class="text-muted small">Assigned To</label>
+                <div class="fw-semibold">
+                  {{ req.assignedTo }}
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+  }
+
+</div>

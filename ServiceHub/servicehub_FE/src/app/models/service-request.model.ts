@@ -1,5 +1,7 @@
 
 export interface ServiceRequest {
+  success: any;
+  data(data: any): unknown;
   id: number;
   requestId: string;
   title: string;
