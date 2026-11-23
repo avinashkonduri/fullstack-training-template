@@ -1,130 +1,191 @@
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import pool from '../config/db.js';
 
-const DATA_FILE = path.resolve(
-  __dirname,
-  '../data/service-requests.json'
-);
+// Map PostgreSQL snake_case columns to Angular camelCase
+const columns = `
+  id,
+  request_id AS "requestId",
+  title,
+  description,
+  category,
+  priority,
+  status,
+  requested_by AS "requestedBy",
+  assigned_to AS "assignedTo",
+  TO_CHAR(created_at, 'YYYY-MM-DD') AS "createdAt"
+`;
 
-// Read all records
-const readData = async () => {
-  const content = await fs.readFile(DATA_FILE, 'utf-8');
-  return JSON.parse(content);
-};
-
-// Write all records
-const writeData = async (data) => {
-  await fs.writeFile(
-    DATA_FILE,
-    JSON.stringify(data, null, 2),
-    'utf-8'
-  );
-};
-
-// GET all service requests
+// GET all service requests with filters
 export const getAllRequests = async (filters = {}) => {
-  let requests = await readData();
+  let query = `
+    SELECT ${columns}
+    FROM service_requests
+    WHERE 1 = 1
+  `;
+
+  const values = [];
 
   if (filters.status) {
-    requests = requests.filter(
-      item => item.status.toLowerCase() === filters.status.toLowerCase()
-    );
+    values.push(filters.status);
+    query += ` AND LOWER(status) = LOWER($${values.length})`;
   }
 
   if (filters.priority) {
-    requests = requests.filter(
-      item => item.priority.toLowerCase() === filters.priority.toLowerCase()
-    );
+    values.push(filters.priority);
+    query += ` AND LOWER(priority) = LOWER($${values.length})`;
   }
 
   if (filters.category) {
-    requests = requests.filter(
-      item => item.category.toLowerCase() === filters.category.toLowerCase()
-    );
+    values.push(filters.category);
+    query += ` AND LOWER(category) = LOWER($${values.length})`;
   }
 
   if (filters.search) {
-    const search = filters.search.toLowerCase();
+    values.push(`%${filters.search}%`);
 
-    requests = requests.filter(item =>
-      item.title.toLowerCase().includes(search) ||
-      item.description.toLowerCase().includes(search) ||
-      item.requestId.toLowerCase().includes(search)
-    );
+    query += `
+      AND (
+        title ILIKE $${values.length}
+        OR description ILIKE $${values.length}
+        OR request_id ILIKE $${values.length}
+      )
+    `;
   }
 
-  return requests;
+  query += ' ORDER BY id DESC';
+
+  const result = await pool.query(query, values);
+
+  return result.rows;
 };
 
 // GET request by ID
 export const getRequestById = async (id) => {
-  const requests = await readData();
+  const query = `
+    SELECT ${columns}
+    FROM service_requests
+    WHERE id = $1
+  `;
 
-  return requests.find(item => item.id === Number(id));
+  const result = await pool.query(query, [id]);
+
+  return result.rows[0] ?? null;
 };
 
 // CREATE request
 export const createRequest = async (requestData) => {
-  const requests = await readData();
+  const {
+    title,
+    description,
+    category,
+    priority = 'Medium',
+    status = 'Open',
+    requestedBy,
+    assignedTo = 'Unassigned'
+  } = requestData;
 
-  const newId = requests.length
-    ? Math.max(...requests.map(item => item.id)) + 1
-    : 1001;
+  const query = `
+    WITH inserted AS (
+      INSERT INTO service_requests (
+        request_id,
+        title,
+        description,
+        category,
+        priority,
+        status,
+        requested_by,
+        assigned_to
+      )
+      VALUES (
+        'SR-' || EXTRACT(YEAR FROM CURRENT_DATE)::TEXT
+          || '-' || LPAD(
+            nextval('service_request_number_seq')::TEXT,
+            3,
+            '0'
+          ),
+        $1, $2, $3, $4, $5, $6, $7
+      )
+      RETURNING id
+    )
+    SELECT ${columns}
+    FROM service_requests
+    WHERE id = (SELECT id FROM inserted)
+  `;
 
-  const newRequest = {
-    id: newId,
-    requestId: `SR-2026-${String(newId - 1000).padStart(3, '0')}`,
-    ...requestData,
-    createdAt: new Date().toISOString().slice(0, 10)
-  };
+  const values = [
+    title,
+    description,
+    category,
+    priority,
+    status,
+    requestedBy,
+    assignedTo
+  ];
 
-  requests.push(newRequest);
+  const result = await pool.query(query, values);
 
-  await writeData(requests);
-
-  return newRequest;
+  return result.rows[0];
 };
 
 // UPDATE request
 export const updateRequest = async (id, requestData) => {
-  const requests = await readData();
-
-  const index = requests.findIndex(
-    item => item.id === Number(id)
-  );
-
-  if (index === -1) return null;
-
-  requests[index] = {
-    ...requests[index],
-    ...requestData,
-    id: requests[index].id,
-    requestId: requests[index].requestId,
-    createdAt: requests[index].createdAt
+  // Only allow editable fields
+  const allowedFields = {
+    title: 'title',
+    description: 'description',
+    category: 'category',
+    priority: 'priority',
+    status: 'status',
+    requestedBy: 'requested_by',
+    assignedTo: 'assigned_to'
   };
 
-  await writeData(requests);
+  const fields = Object.entries(requestData).filter(
+    ([key, value]) =>
+      Object.hasOwn(allowedFields, key) &&
+      value !== undefined
+  );
 
-  return requests[index];
+  if (fields.length === 0) {
+    const error = new Error('No valid fields provided');
+    error.status = 400;
+    throw error;
+  }
+
+  const values = [];
+
+  const setClause = fields.map(([key, value]) => {
+    values.push(value);
+    return `${allowedFields[key]} = $${values.length}`;
+  }).join(', ');
+
+  values.push(id);
+
+  const query = `
+    WITH updated AS (
+      UPDATE service_requests
+      SET ${setClause}
+      WHERE id = $${values.length}
+      RETURNING id
+    )
+    SELECT ${columns}
+    FROM service_requests
+    WHERE id = (SELECT id FROM updated)
+  `;
+
+  const result = await pool.query(query, values);
+
+  return result.rows[0] ?? null;
 };
 
 // DELETE request
 export const deleteRequest = async (id) => {
-  const requests = await readData();
+  const query = `
+    DELETE FROM service_requests
+    WHERE id = $1
+  `;
 
-  const index = requests.findIndex(
-    item => item.id === Number(id)
-  );
+  const result = await pool.query(query, [id]);
 
-  if (index === -1) return false;
-
-  requests.splice(index, 1);
-
-  await writeData(requests);
-
-  return true;
+  return result.rowCount > 0;
 };
