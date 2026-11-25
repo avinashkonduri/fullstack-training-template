@@ -1,0 +1,141 @@
+<div class="card shadow-sm border-0 rounded-3 mb-3 h-100">
+
+  <!-- Card Header -->
+  <div class="card-header bg-white border-0 pt-3 px-3">
+    <div class="d-flex justify-content-between align-items-center">
+
+      <span class="text-muted small fw-semibold">
+        <i class="bi bi-ticket-detailed me-1"></i>
+        {{ request().requestId }}
+      </span>
+
+      <!-- Priority Badge -->
+      <span
+        class="badge rounded-pill px-3 py-2"
+        [ngClass]="{
+          'text-bg-success': request().priority === 'Low',
+          'text-bg-info': request().priority === 'Medium',
+          'text-bg-warning': request().priority === 'High',
+          'text-bg-danger': request().priority === 'Critical'
+        }">
+        {{ request().priority }} Priority
+      </span>
+
+    </div>
+  </div>
+
+  <!-- Card Body -->
+  <div class="card-body">
+
+    <h5 class="card-title fw-bold text-dark mb-2">
+      {{ request().title }}
+    </h5>
+
+    <p class="card-text text-secondary small">
+      {{ request().description }}
+    </p>
+
+    <hr class="text-secondary opacity-25">
+
+    <div class="row g-3">
+
+      <!-- Category -->
+      <div class="col-6">
+        <div class="text-muted small mb-1">
+          <i class="bi bi-folder me-1"></i>
+          Category
+        </div>
+
+        <div class="fw-semibold">
+          {{ request().category }}
+        </div>
+      </div>
+
+      <!-- Status -->
+      <div class="col-6">
+        <div class="text-muted small mb-1">
+          <i class="bi bi-activity me-1"></i>
+          Status
+        </div>
+
+        <span
+          class="badge rounded-pill"
+          [ngClass]="{
+            'text-bg-primary': request().status === 'Open',
+            'text-bg-info': request().status === 'In Progress',
+            'text-bg-warning': request().status === 'Waiting',
+            'text-bg-success': request().status === 'Resolved'
+          }">
+          {{ request().status }}
+        </span>
+      </div>
+
+      <!-- Assigned To -->
+      <div class="col-12">
+        <div class="text-muted small mb-2">
+          Assigned To
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+
+          <div
+            class="bg-primary-subtle text-primary rounded-circle
+                   d-flex align-items-center justify-content-center"
+            style="width: 36px; height: 36px;">
+
+            <i class="bi bi-person-fill"></i>
+
+          </div>
+
+          <span class="fw-semibold small">
+            {{ request().assignedTo || 'Unassigned' }}
+          </span>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Card Footer -->
+<div class="card-footer bg-light border-0 py-3">
+
+  <div class="d-flex justify-content-between
+              align-items-center flex-wrap gap-2">
+
+    <small class="text-muted">
+      <i class="bi bi-clipboard-list me-1"></i>
+      Service Request
+    </small>
+
+    <div class="d-flex gap-2">
+
+      <!-- Edit Button -->
+      <button
+        type="button"
+        class="btn btn-outline-primary btn-sm"
+        click="onEdit()">
+
+        <i class="bi bi-pencil-square me-1"></i>
+        Edit
+
+      </button>
+
+      <!-- Delete Button -->
+      <button
+        type="button"
+        class="btn btn-outline-danger btn-sm"
+        click="onDelete()">
+
+        <i class="bi bi-trash me-1"></i>
+        Delete
+
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
+</div>

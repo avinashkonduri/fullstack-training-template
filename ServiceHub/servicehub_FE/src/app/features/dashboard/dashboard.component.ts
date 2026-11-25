@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } 
 import { ServiceRequest } from '../../models/service-request.model';
 import { RouterModule } from '@angular/router';
 import { ServiceRequestService } from '../../service/service-request';
+import { RequestCard } from '../../components/request-card/request-card';
 // Team Member Model
 interface TeamMember {
   initials: string;
@@ -22,7 +23,7 @@ interface RequestCategory {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [FormsModule, ReactiveFormsModule, RouterModule],
+  imports: [FormsModule, ReactiveFormsModule, RouterModule, RequestCard],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css',
 })
